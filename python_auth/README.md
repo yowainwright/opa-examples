@@ -1,5 +1,5 @@
 
-# OPA with Python Example
+# OPA with Python Auth Example
 
 setup
 
