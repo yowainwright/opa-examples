@@ -14,9 +14,8 @@ type virtualCache struct {
 }
 
 type virtualCacheElem struct {
-	value     *ast.Term
-	children  *util.HashMap
-	undefined bool
+	value    *ast.Term
+	children *util.HashMap
 }
 
 func newVirtualCache() *virtualCache {
@@ -33,31 +32,18 @@ func (c *virtualCache) Pop() {
 	c.stack = c.stack[:len(c.stack)-1]
 }
 
-// Returns the resolved value of the AST term and a flag indicating if the value
-// should be interpretted as undefined:
-//
-//	nil, true indicates the ref is undefined
-//	ast.Term, false indicates the ref is defined
-//	nil, false indicates the ref has not been cached
-//	ast.Term, true is impossible
-func (c *virtualCache) Get(ref ast.Ref) (*ast.Term, bool) {
+func (c *virtualCache) Get(ref ast.Ref) *ast.Term {
 	node := c.stack[len(c.stack)-1]
 	for i := 0; i < len(ref); i++ {
 		x, ok := node.children.Get(ref[i])
 		if !ok {
-			return nil, false
+			return nil
 		}
 		node = x.(*virtualCacheElem)
 	}
-	if node.undefined {
-		return nil, true
-	}
-
-	return node.value, false
+	return node.value
 }
 
-// If value is a nil pointer, set the 'undefined' flag on the cache element to
-// indicate that the Ref has resolved to undefined.
 func (c *virtualCache) Put(ref ast.Ref, value *ast.Term) {
 	node := c.stack[len(c.stack)-1]
 	for i := 0; i < len(ref); i++ {
@@ -70,11 +56,7 @@ func (c *virtualCache) Put(ref ast.Ref, value *ast.Term) {
 			node = next
 		}
 	}
-	if value != nil {
-		node.value = value
-	} else {
-		node.undefined = true
-	}
+	node.value = value
 }
 
 func newVirtualCacheElem() *virtualCacheElem {

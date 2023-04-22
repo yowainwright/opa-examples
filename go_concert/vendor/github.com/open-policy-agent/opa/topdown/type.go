@@ -1,4 +1,4 @@
-// Copyright 2022 The OPA Authors.  All rights reserved.
+// Copyright 2018 The OPA Authors.  All rights reserved.
 // Use of this source code is governed by an Apache2
 // license that can be found in the LICENSE file.
 
@@ -8,75 +8,75 @@ import (
 	"github.com/open-policy-agent/opa/ast"
 )
 
-func builtinIsNumber(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	switch operands[0].Value.(type) {
+func builtinIsNumber(a ast.Value) (ast.Value, error) {
+	switch a.(type) {
 	case ast.Number:
-		return iter(ast.BooleanTerm(true))
+		return ast.Boolean(true), nil
 	default:
-		return iter(ast.BooleanTerm(false))
+		return nil, BuiltinEmpty{}
 	}
 }
 
-func builtinIsString(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	switch operands[0].Value.(type) {
+func builtinIsString(a ast.Value) (ast.Value, error) {
+	switch a.(type) {
 	case ast.String:
-		return iter(ast.BooleanTerm(true))
+		return ast.Boolean(true), nil
 	default:
-		return iter(ast.BooleanTerm(false))
+		return nil, BuiltinEmpty{}
 	}
 }
 
-func builtinIsBoolean(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	switch operands[0].Value.(type) {
+func builtinIsBoolean(a ast.Value) (ast.Value, error) {
+	switch a.(type) {
 	case ast.Boolean:
-		return iter(ast.BooleanTerm(true))
+		return ast.Boolean(true), nil
 	default:
-		return iter(ast.BooleanTerm(false))
+		return nil, BuiltinEmpty{}
 	}
 }
 
-func builtinIsArray(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	switch operands[0].Value.(type) {
+func builtinIsArray(a ast.Value) (ast.Value, error) {
+	switch a.(type) {
 	case *ast.Array:
-		return iter(ast.BooleanTerm(true))
+		return ast.Boolean(true), nil
 	default:
-		return iter(ast.BooleanTerm(false))
+		return nil, BuiltinEmpty{}
 	}
 }
 
-func builtinIsSet(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	switch operands[0].Value.(type) {
+func builtinIsSet(a ast.Value) (ast.Value, error) {
+	switch a.(type) {
 	case ast.Set:
-		return iter(ast.BooleanTerm(true))
+		return ast.Boolean(true), nil
 	default:
-		return iter(ast.BooleanTerm(false))
+		return nil, BuiltinEmpty{}
 	}
 }
 
-func builtinIsObject(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	switch operands[0].Value.(type) {
+func builtinIsObject(a ast.Value) (ast.Value, error) {
+	switch a.(type) {
 	case ast.Object:
-		return iter(ast.BooleanTerm(true))
+		return ast.Boolean(true), nil
 	default:
-		return iter(ast.BooleanTerm(false))
+		return nil, BuiltinEmpty{}
 	}
 }
 
-func builtinIsNull(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	switch operands[0].Value.(type) {
+func builtinIsNull(a ast.Value) (ast.Value, error) {
+	switch a.(type) {
 	case ast.Null:
-		return iter(ast.BooleanTerm(true))
+		return ast.Boolean(true), nil
 	default:
-		return iter(ast.BooleanTerm(false))
+		return nil, BuiltinEmpty{}
 	}
 }
 
 func init() {
-	RegisterBuiltinFunc(ast.IsNumber.Name, builtinIsNumber)
-	RegisterBuiltinFunc(ast.IsString.Name, builtinIsString)
-	RegisterBuiltinFunc(ast.IsBoolean.Name, builtinIsBoolean)
-	RegisterBuiltinFunc(ast.IsArray.Name, builtinIsArray)
-	RegisterBuiltinFunc(ast.IsSet.Name, builtinIsSet)
-	RegisterBuiltinFunc(ast.IsObject.Name, builtinIsObject)
-	RegisterBuiltinFunc(ast.IsNull.Name, builtinIsNull)
+	RegisterFunctionalBuiltin1(ast.IsNumber.Name, builtinIsNumber)
+	RegisterFunctionalBuiltin1(ast.IsString.Name, builtinIsString)
+	RegisterFunctionalBuiltin1(ast.IsBoolean.Name, builtinIsBoolean)
+	RegisterFunctionalBuiltin1(ast.IsArray.Name, builtinIsArray)
+	RegisterFunctionalBuiltin1(ast.IsSet.Name, builtinIsSet)
+	RegisterFunctionalBuiltin1(ast.IsObject.Name, builtinIsObject)
+	RegisterFunctionalBuiltin1(ast.IsNull.Name, builtinIsNull)
 }

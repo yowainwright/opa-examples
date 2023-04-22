@@ -375,16 +375,12 @@ func ignoreExprDuringPartial(expr *ast.Expr) bool {
 }
 
 func ignoreDuringPartial(bi *ast.Builtin) bool {
-	// Note(philipc): We keep this legacy check around to avoid breaking
-	// existing library users.
-	//nolint:staticcheck // We specifically ignore our own linter warning here.
 	for _, ignore := range ast.IgnoreDuringPartialEval {
 		if bi == ignore {
 			return true
 		}
 	}
-	// Otherwise, ensure all non-deterministic builtins are thrown out.
-	return bi.Nondeterministic
+	return false
 }
 
 type inliningControl struct {

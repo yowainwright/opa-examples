@@ -375,9 +375,6 @@ func (u *update) Apply(data interface{}) interface{} {
 	}
 	switch parent := parent.(type) {
 	case map[string]interface{}:
-		if parent == nil {
-			parent = make(map[string]interface{}, 1)
-		}
 		parent[key] = u.value
 	case []interface{}:
 		idx, err := strconv.Atoi(key)

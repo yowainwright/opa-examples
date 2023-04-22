@@ -32,13 +32,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
 
 	"github.com/xeipuuv/gojsonreference"
 )
@@ -48,11 +48,8 @@ import (
 // add extra parameters to all calls and interfaces involved, so we're
 // using a global variable instead:
 var allowNet map[string]struct{}
-var netMut sync.RWMutex
 
 func SetAllowNet(hosts []string) {
-	netMut.Lock()
-	defer netMut.Unlock()
 	if hosts == nil {
 		allowNet = nil // resetting the global
 		return
@@ -64,8 +61,6 @@ func SetAllowNet(hosts []string) {
 }
 
 func isAllowed(ref *url.URL) bool {
-	netMut.RLock()
-	defer netMut.RUnlock()
 	if allowNet == nil {
 		return true
 	}
@@ -219,7 +214,7 @@ func (l *jsonReferenceLoader) loadFromHTTP(address string) (interface{}, error) 
 		return nil, errors.New(formatErrorDescription(Locale.HTTPBadStatus(), ErrorDetails{"status": resp.Status}))
 	}
 
-	bodyBuff, err := io.ReadAll(resp.Body)
+	bodyBuff, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +229,7 @@ func (l *jsonReferenceLoader) loadFromFile(path string) (interface{}, error) {
 	}
 	defer f.Close()
 
-	bodyBuff, err := io.ReadAll(f)
+	bodyBuff, err := ioutil.ReadAll(f)
 	if err != nil {
 		return nil, err
 	}

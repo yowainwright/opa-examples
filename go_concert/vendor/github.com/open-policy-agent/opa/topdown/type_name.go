@@ -10,27 +10,27 @@ import (
 	"github.com/open-policy-agent/opa/ast"
 )
 
-func builtinTypeName(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	switch operands[0].Value.(type) {
+func builtinTypeName(a ast.Value) (ast.Value, error) {
+	switch a.(type) {
 	case ast.Null:
-		return iter(ast.StringTerm("null"))
+		return ast.String("null"), nil
 	case ast.Boolean:
-		return iter(ast.StringTerm("boolean"))
+		return ast.String("boolean"), nil
 	case ast.Number:
-		return iter(ast.StringTerm("number"))
+		return ast.String("number"), nil
 	case ast.String:
-		return iter(ast.StringTerm("string"))
+		return ast.String("string"), nil
 	case *ast.Array:
-		return iter(ast.StringTerm("array"))
+		return ast.String("array"), nil
 	case ast.Object:
-		return iter(ast.StringTerm("object"))
+		return ast.String("object"), nil
 	case ast.Set:
-		return iter(ast.StringTerm("set"))
+		return ast.String("set"), nil
 	}
 
-	return fmt.Errorf("illegal value")
+	return nil, fmt.Errorf("illegal value")
 }
 
 func init() {
-	RegisterBuiltinFunc(ast.TypeNameBuiltin.Name, builtinTypeName)
+	RegisterFunctionalBuiltin1(ast.TypeNameBuiltin.Name, builtinTypeName)
 }

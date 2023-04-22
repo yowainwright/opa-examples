@@ -3,6 +3,8 @@ package jwk
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 // KeyUsageType is used to denote what this key should be used for
@@ -44,7 +46,7 @@ func (keyOperationList *KeyOperationList) Accept(v interface{}) error {
 		*keyOperationList = x
 		return nil
 	default:
-		return fmt.Errorf(`invalid value %T`, v)
+		return errors.Errorf(`invalid value %T`, v)
 	}
 }
 
