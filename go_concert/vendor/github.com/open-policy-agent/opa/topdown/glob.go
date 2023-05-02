@@ -13,31 +13,30 @@ import (
 var globCacheLock = sync.Mutex{}
 var globCache map[string]glob.Glob
 
-func builtinGlobMatch(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	pattern, err := builtins.StringOperand(operands[0].Value, 1)
+func builtinGlobMatch(a, b, c ast.Value) (ast.Value, error) {
+	pattern, err := builtins.StringOperand(a, 1)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
 	var delimiters []rune
-	switch operands[1].Value.(type) {
+	switch b.(type) {
 	case ast.Null:
 		delimiters = []rune{}
 	case *ast.Array:
-		delimiters, err = builtins.RuneSliceOperand(operands[1].Value, 2)
+		delimiters, err = builtins.RuneSliceOperand(b, 2)
 		if err != nil {
-			return err
+			return nil, err
 		}
+
 		if len(delimiters) == 0 {
 			delimiters = []rune{'.'}
 		}
 	default:
-		return builtins.NewOperandTypeErr(2, operands[1].Value, "array", "null")
+		return nil, builtins.NewOperandTypeErr(2, b, "array", "null")
 	}
-
-	match, err := builtins.StringOperand(operands[2].Value, 3)
+	match, err := builtins.StringOperand(c, 3)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	builder := strings.Builder{}
@@ -48,39 +47,32 @@ func builtinGlobMatch(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Ter
 	}
 	id := builder.String()
 
-	m, err := globCompileAndMatch(id, string(pattern), string(match), delimiters)
-	if err != nil {
-		return err
-	}
-	return iter(ast.BooleanTerm(m))
-}
-
-func globCompileAndMatch(id, pattern, match string, delimiters []rune) (bool, error) {
 	globCacheLock.Lock()
 	defer globCacheLock.Unlock()
 	p, ok := globCache[id]
 	if !ok {
 		var err error
-		if p, err = glob.Compile(pattern, delimiters...); err != nil {
-			return false, err
+		if p, err = glob.Compile(string(pattern), delimiters...); err != nil {
+			return nil, err
 		}
 		globCache[id] = p
 	}
-	out := p.Match(match)
-	return out, nil
+
+	m := p.Match(string(match))
+	return ast.Boolean(m), nil
 }
 
-func builtinGlobQuoteMeta(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	pattern, err := builtins.StringOperand(operands[0].Value, 1)
+func builtinGlobQuoteMeta(a ast.Value) (ast.Value, error) {
+	pattern, err := builtins.StringOperand(a, 1)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return iter(ast.StringTerm(glob.QuoteMeta(string(pattern))))
+	return ast.String(glob.QuoteMeta(string(pattern))), nil
 }
 
 func init() {
 	globCache = map[string]glob.Glob{}
-	RegisterBuiltinFunc(ast.GlobMatch.Name, builtinGlobMatch)
-	RegisterBuiltinFunc(ast.GlobQuoteMeta.Name, builtinGlobQuoteMeta)
+	RegisterFunctionalBuiltin3(ast.GlobMatch.Name, builtinGlobMatch)
+	RegisterFunctionalBuiltin1(ast.GlobQuoteMeta.Name, builtinGlobQuoteMeta)
 }

@@ -3,6 +3,7 @@ package keys
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/open-policy-agent/opa/util"
@@ -56,7 +57,7 @@ func (k *Config) validateAndInjectDefaults(id string) error {
 func NewKeyConfig(key, alg, scope string) (*Config, error) {
 	var pubKey string
 	if _, err := os.Stat(key); err == nil {
-		bs, err := os.ReadFile(key)
+		bs, err := ioutil.ReadFile(key)
 		if err != nil {
 			return nil, err
 		}

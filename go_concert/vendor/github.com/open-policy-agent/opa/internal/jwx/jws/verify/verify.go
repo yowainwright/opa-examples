@@ -7,6 +7,8 @@ import (
 	"encoding/pem"
 	"fmt"
 
+	"github.com/pkg/errors"
+
 	"github.com/open-policy-agent/opa/internal/jwx/jwa"
 )
 
@@ -21,7 +23,7 @@ func New(alg jwa.SignatureAlgorithm) (Verifier, error) {
 	case jwa.HS256, jwa.HS384, jwa.HS512:
 		return newHMAC(alg)
 	default:
-		return nil, fmt.Errorf(`unsupported signature algorithm: %s`, alg)
+		return nil, errors.Errorf(`unsupported signature algorithm: %s`, alg)
 	}
 }
 
@@ -50,6 +52,6 @@ func GetSigningKey(key string, alg jwa.SignatureAlgorithm) (interface{}, error) 
 	case jwa.HS256, jwa.HS384, jwa.HS512:
 		return []byte(key), nil
 	default:
-		return nil, fmt.Errorf("unsupported signature algorithm: %s", alg)
+		return nil, errors.Errorf("unsupported signature algorithm: %s", alg)
 	}
 }

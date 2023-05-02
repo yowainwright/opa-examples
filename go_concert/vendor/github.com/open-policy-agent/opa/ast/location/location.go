@@ -3,8 +3,9 @@ package location
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 // Location records a position in source code

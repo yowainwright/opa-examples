@@ -9,6 +9,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"io/ioutil"
 
 	"github.com/open-policy-agent/opa/internal/leb128"
 	"github.com/open-policy-agent/opa/internal/wasm/constant"
@@ -205,7 +206,7 @@ func readSections(r io.Reader, m *module.Module) error {
 }
 
 func readCustomSection(r io.Reader, name string, s *[]module.CustomSection) error {
-	buf, err := io.ReadAll(r)
+	buf, err := ioutil.ReadAll(r)
 	if err != nil {
 		return err
 	}

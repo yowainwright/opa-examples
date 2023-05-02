@@ -7,10 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"path/filepath"
 	"sync"
-
-	"github.com/open-policy-agent/opa/loader/filter"
 )
 
 const (
@@ -22,7 +19,6 @@ type dirLoaderFS struct {
 	filesystem fs.FS
 	files      []string
 	idx        int
-	filter     filter.LoaderFilter
 }
 
 // NewFSLoader returns a basic DirectoryLoader implementation
@@ -30,6 +26,11 @@ type dirLoaderFS struct {
 func NewFSLoader(filesystem fs.FS) (DirectoryLoader, error) {
 	d := dirLoaderFS{
 		filesystem: filesystem,
+	}
+
+	err := fs.WalkDir(d.filesystem, defaultFSLoaderRoot, d.walkDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list files: %w", err)
 	}
 
 	return &d, nil
@@ -40,31 +41,11 @@ func (d *dirLoaderFS) walkDir(path string, dirEntry fs.DirEntry, err error) erro
 		return err
 	}
 
-	if dirEntry != nil {
-		info, err := dirEntry.Info()
-		if err != nil {
-			return err
-		}
-
-		if dirEntry.Type().IsRegular() {
-			if d.filter != nil && d.filter(filepath.ToSlash(path), info, getdepth(path, false)) {
-				return nil
-			}
-
-			d.files = append(d.files, path)
-		} else if dirEntry.Type().IsDir() {
-			if d.filter != nil && d.filter(filepath.ToSlash(path), info, getdepth(path, true)) {
-				return fs.SkipDir
-			}
-		}
+	if dirEntry != nil && dirEntry.Type().IsRegular() {
+		d.files = append(d.files, path)
 	}
-	return nil
-}
 
-// WithFilter specifies the filter object to use to filter files while loading bundles
-func (d *dirLoaderFS) WithFilter(filter filter.LoaderFilter) DirectoryLoader {
-	d.filter = filter
-	return d
+	return nil
 }
 
 // NextFile iterates to the next file in the directory tree
@@ -72,13 +53,6 @@ func (d *dirLoaderFS) WithFilter(filter filter.LoaderFilter) DirectoryLoader {
 func (d *dirLoaderFS) NextFile() (*Descriptor, error) {
 	d.Lock()
 	defer d.Unlock()
-
-	if d.files == nil {
-		err := fs.WalkDir(d.filesystem, defaultFSLoaderRoot, d.walkDir)
-		if err != nil {
-			return nil, fmt.Errorf("failed to list files: %w", err)
-		}
-	}
 
 	// If done reading files then just return io.EOF
 	// errors for each NextFile() call

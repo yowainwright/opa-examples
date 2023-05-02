@@ -17,6 +17,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"hash"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -41,28 +42,24 @@ const (
 	blockTypePrivateKey = "PRIVATE KEY"
 )
 
-func builtinCryptoX509ParseCertificates(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	input, err := builtins.StringOperand(operands[0].Value, 1)
+func builtinCryptoX509ParseCertificates(a ast.Value) (ast.Value, error) {
+	input, err := builtins.StringOperand(a, 1)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	certs, err := getX509CertsFromString(string(input))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	v, err := ast.InterfaceToValue(certs)
-	if err != nil {
-		return err
-	}
-
-	return iter(ast.NewTerm(v))
+	return ast.InterfaceToValue(certs)
 }
 
-func builtinCryptoX509ParseAndVerifyCertificates(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
+func builtinCryptoX509ParseAndVerifyCertificates(
+	_ BuiltinContext, args []*ast.Term, iter func(*ast.Term) error) error {
 
-	a := operands[0].Value
+	a := args[0].Value
 	input, err := builtins.StringOperand(a, 1)
 	if err != nil {
 		return err
@@ -96,10 +93,11 @@ func builtinCryptoX509ParseAndVerifyCertificates(_ BuiltinContext, operands []*a
 	return iter(valid)
 }
 
-func builtinCryptoX509ParseCertificateRequest(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	input, err := builtins.StringOperand(operands[0].Value, 1)
+func builtinCryptoX509ParseCertificateRequest(a ast.Value) (ast.Value, error) {
+
+	input, err := builtins.StringOperand(a, 1)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// data to be passed to x509.ParseCertificateRequest
@@ -109,13 +107,13 @@ func builtinCryptoX509ParseCertificateRequest(_ BuiltinContext, operands []*ast.
 	if str := string(input); !strings.HasPrefix(str, "-----BEGIN CERTIFICATE REQUEST-----") {
 		bytes, err = base64.StdEncoding.DecodeString(str)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	p, _ := pem.Decode(bytes)
 	if p != nil && p.Type != blockTypeCertificateRequest {
-		return fmt.Errorf("invalid PEM-encoded certificate signing request")
+		return nil, fmt.Errorf("invalid PEM-encoded certificate signing request")
 	}
 	if p != nil {
 		bytes = p.Bytes
@@ -123,30 +121,24 @@ func builtinCryptoX509ParseCertificateRequest(_ BuiltinContext, operands []*ast.
 
 	csr, err := x509.ParseCertificateRequest(bytes)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	bs, err := json.Marshal(csr)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var x interface{}
 	if err := util.UnmarshalJSON(bs, &x); err != nil {
-		return err
+		return nil, err
 	}
-
-	v, err := ast.InterfaceToValue(x)
-	if err != nil {
-		return err
-	}
-
-	return iter(ast.NewTerm(v))
+	return ast.InterfaceToValue(x)
 }
 
-func builtinCryptoX509ParseRSAPrivateKey(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
+func builtinCryptoX509ParseRSAPrivateKey(_ BuiltinContext, args []*ast.Term, iter func(*ast.Term) error) error {
 
-	a := operands[0].Value
+	a := args[0].Value
 	input, err := builtins.StringOperand(a, 1)
 	if err != nil {
 		return err
@@ -189,38 +181,26 @@ func hashHelper(a ast.Value, h func(ast.String) string) (ast.Value, error) {
 	return ast.String(h(s)), nil
 }
 
-func builtinCryptoMd5(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	res, err := hashHelper(operands[0].Value, func(s ast.String) string { return fmt.Sprintf("%x", md5.Sum([]byte(s))) })
-	if err != nil {
-		return err
-	}
-	return iter(ast.NewTerm(res))
+func builtinCryptoMd5(a ast.Value) (ast.Value, error) {
+	return hashHelper(a, func(s ast.String) string { return fmt.Sprintf("%x", md5.Sum([]byte(s))) })
 }
 
-func builtinCryptoSha1(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	res, err := hashHelper(operands[0].Value, func(s ast.String) string { return fmt.Sprintf("%x", sha1.Sum([]byte(s))) })
-	if err != nil {
-		return err
-	}
-	return iter(ast.NewTerm(res))
+func builtinCryptoSha1(a ast.Value) (ast.Value, error) {
+	return hashHelper(a, func(s ast.String) string { return fmt.Sprintf("%x", sha1.Sum([]byte(s))) })
 }
 
-func builtinCryptoSha256(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	res, err := hashHelper(operands[0].Value, func(s ast.String) string { return fmt.Sprintf("%x", sha256.Sum256([]byte(s))) })
-	if err != nil {
-		return err
-	}
-	return iter(ast.NewTerm(res))
+func builtinCryptoSha256(a ast.Value) (ast.Value, error) {
+	return hashHelper(a, func(s ast.String) string { return fmt.Sprintf("%x", sha256.Sum256([]byte(s))) })
 }
 
-func hmacHelper(operands []*ast.Term, iter func(*ast.Term) error, h func() hash.Hash) error {
-	a1 := operands[0].Value
+func hmacHelper(args []*ast.Term, iter func(*ast.Term) error, h func() hash.Hash) error {
+	a1 := args[0].Value
 	message, err := builtins.StringOperand(a1, 1)
 	if err != nil {
 		return err
 	}
 
-	a2 := operands[1].Value
+	a2 := args[1].Value
 	key, err := builtins.StringOperand(a2, 2)
 	if err != nil {
 		return err
@@ -233,29 +213,29 @@ func hmacHelper(operands []*ast.Term, iter func(*ast.Term) error, h func() hash.
 	return iter(ast.StringTerm(fmt.Sprintf("%x", messageDigest)))
 }
 
-func builtinCryptoHmacMd5(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	return hmacHelper(operands, iter, md5.New)
+func builtinCryptoHmacMd5(_ BuiltinContext, args []*ast.Term, iter func(*ast.Term) error) error {
+	return hmacHelper(args, iter, md5.New)
 }
 
-func builtinCryptoHmacSha1(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	return hmacHelper(operands, iter, sha1.New)
+func builtinCryptoHmacSha1(_ BuiltinContext, args []*ast.Term, iter func(*ast.Term) error) error {
+	return hmacHelper(args, iter, sha1.New)
 }
 
-func builtinCryptoHmacSha256(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	return hmacHelper(operands, iter, sha256.New)
+func builtinCryptoHmacSha256(_ BuiltinContext, args []*ast.Term, iter func(*ast.Term) error) error {
+	return hmacHelper(args, iter, sha256.New)
 }
 
-func builtinCryptoHmacSha512(_ BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error {
-	return hmacHelper(operands, iter, sha512.New)
+func builtinCryptoHmacSha512(_ BuiltinContext, args []*ast.Term, iter func(*ast.Term) error) error {
+	return hmacHelper(args, iter, sha512.New)
 }
 
 func init() {
-	RegisterBuiltinFunc(ast.CryptoX509ParseCertificates.Name, builtinCryptoX509ParseCertificates)
+	RegisterFunctionalBuiltin1(ast.CryptoX509ParseCertificates.Name, builtinCryptoX509ParseCertificates)
 	RegisterBuiltinFunc(ast.CryptoX509ParseAndVerifyCertificates.Name, builtinCryptoX509ParseAndVerifyCertificates)
-	RegisterBuiltinFunc(ast.CryptoMd5.Name, builtinCryptoMd5)
-	RegisterBuiltinFunc(ast.CryptoSha1.Name, builtinCryptoSha1)
-	RegisterBuiltinFunc(ast.CryptoSha256.Name, builtinCryptoSha256)
-	RegisterBuiltinFunc(ast.CryptoX509ParseCertificateRequest.Name, builtinCryptoX509ParseCertificateRequest)
+	RegisterFunctionalBuiltin1(ast.CryptoMd5.Name, builtinCryptoMd5)
+	RegisterFunctionalBuiltin1(ast.CryptoSha1.Name, builtinCryptoSha1)
+	RegisterFunctionalBuiltin1(ast.CryptoSha256.Name, builtinCryptoSha256)
+	RegisterFunctionalBuiltin1(ast.CryptoX509ParseCertificateRequest.Name, builtinCryptoX509ParseCertificateRequest)
 	RegisterBuiltinFunc(ast.CryptoX509ParseRSAPrivateKey.Name, builtinCryptoX509ParseRSAPrivateKey)
 	RegisterBuiltinFunc(ast.CryptoHmacMd5.Name, builtinCryptoHmacMd5)
 	RegisterBuiltinFunc(ast.CryptoHmacSha1.Name, builtinCryptoHmacSha1)
@@ -421,7 +401,7 @@ func addCACertsFromEnv(pool *x509.CertPool, envName string) (*x509.CertPool, err
 // ReadCertFromFile reads a cert from file
 func readCertFromFile(localCertFile string) ([]byte, error) {
 	// Read in the cert file
-	certPEM, err := os.ReadFile(localCertFile)
+	certPEM, err := ioutil.ReadFile(localCertFile)
 	if err != nil {
 		return nil, err
 	}
@@ -431,7 +411,7 @@ func readCertFromFile(localCertFile string) ([]byte, error) {
 // ReadKeyFromFile reads a key from file
 func readKeyFromFile(localKeyFile string) ([]byte, error) {
 	// Read in the cert file
-	key, err := os.ReadFile(localKeyFile)
+	key, err := ioutil.ReadFile(localKeyFile)
 	if err != nil {
 		return nil, err
 	}

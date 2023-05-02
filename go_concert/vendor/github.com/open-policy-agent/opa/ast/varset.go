@@ -91,7 +91,7 @@ func (s VarSet) Update(vs VarSet) {
 }
 
 func (s VarSet) String() string {
-	tmp := make([]string, 0, len(s))
+	tmp := []string{}
 	for v := range s {
 		tmp = append(tmp, string(v))
 	}

@@ -8,6 +8,7 @@ package bundle
 import (
 	"encoding/pem"
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/open-policy-agent/opa/internal/jwx/jwa"
@@ -114,7 +115,7 @@ func (s *SigningConfig) GetPrivateKey() (interface{}, error) {
 
 	var priv string
 	if _, err := os.Stat(s.Key); err == nil {
-		bs, err := os.ReadFile(s.Key)
+		bs, err := ioutil.ReadFile(s.Key)
 		if err != nil {
 			return nil, err
 		}
@@ -132,7 +133,7 @@ func (s *SigningConfig) GetPrivateKey() (interface{}, error) {
 func (s *SigningConfig) GetClaims() (map[string]interface{}, error) {
 	var claims map[string]interface{}
 
-	bs, err := os.ReadFile(s.ClaimsPath)
+	bs, err := ioutil.ReadFile(s.ClaimsPath)
 	if err != nil {
 		return claims, err
 	}

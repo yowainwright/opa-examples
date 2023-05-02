@@ -6,7 +6,6 @@ import (
 
 	"github.com/open-policy-agent/opa/ast"
 	"github.com/open-policy-agent/opa/metrics"
-	"github.com/open-policy-agent/opa/topdown/builtins"
 	"github.com/open-policy-agent/opa/topdown/cache"
 	"github.com/open-policy-agent/opa/topdown/print"
 )
@@ -24,7 +23,6 @@ type EvalOpts struct {
 	Time                   time.Time
 	Seed                   io.Reader
 	InterQueryBuiltinCache cache.InterQueryCache
-	NDBuiltinCache         builtins.NDBCache
 	PrintHook              print.Hook
 	Capabilities           *ast.Capabilities
 }
